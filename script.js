@@ -621,26 +621,109 @@ const render = async () => {
 
 const renderLogin = (mode = 'login') => {
     app.innerHTML = `
-        <div class="flex h-screen w-full bg-slate-100">
-            <div class="hidden lg:flex w-1/2 bg-blue-600 items-center justify-center relative overflow-hidden">
-                <div class="absolute inset-0 bg-blue-700 opacity-50 pattern-grid-lg"></div>
-                <div class="text-white text-center z-10 p-10">
-                    <h1 class="text-5xl font-bold mb-6">PharmaConnect</h1>
-                    <p class="text-xl opacity-90">Enterprise Intelligence Dashboard</p>
+        <div class="min-h-screen w-full flex">
+            <!-- Left Hero Section - CVS Style -->
+            <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-red-600 via-red-700 to-red-900 items-center justify-center relative overflow-hidden">
+                <!-- Decorative Elements -->
+                <div class="absolute top-0 left-0 w-full h-full opacity-10">
+                    <div class="absolute top-10 left-10 w-32 h-32 border-4 border-white rounded-full"></div>
+                    <div class="absolute bottom-20 right-20 w-48 h-48 border-4 border-white rounded-full"></div>
+                    <div class="absolute top-1/2 left-1/4 w-24 h-24 border-4 border-white rounded-full"></div>
+                </div>
+                
+                <div class="text-white text-center z-10 p-12 max-w-lg">
+                    <!-- Logo/Brand -->
+                    <div class="mb-8">
+                        <div class="inline-flex items-center justify-center w-24 h-24 bg-white/20 backdrop-blur rounded-2xl mb-6 shadow-2xl">
+                            <i class="fas fa-pills text-5xl text-white"></i>
+                        </div>
+                        <h1 class="text-5xl font-bold mb-4 tracking-tight">PharmaConnect</h1>
+                        <p class="text-xl text-red-100 font-light">Enterprise Intelligence Platform</p>
+                    </div>
+                    
+                    <!-- Features List -->
+                    <div class="mt-12 space-y-4 text-left">
+                        <div class="flex items-center gap-4 bg-white/10 backdrop-blur rounded-xl p-4">
+                            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-chart-line text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">Real-time Analytics</h3>
+                                <p class="text-sm text-red-100">Track sales & performance instantly</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 bg-white/10 backdrop-blur rounded-xl p-4">
+                            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-brain text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">AI-Powered Insights</h3>
+                                <p class="text-sm text-red-100">Smart predictions & recommendations</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 bg-white/10 backdrop-blur rounded-xl p-4">
+                            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-users text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">Team Management</h3>
+                                <p class="text-sm text-red-100">Monitor agent performance</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
-                <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl slide-in">
-                    <h2 class="text-3xl font-bold text-slate-800 mb-2">${mode === 'login' ? 'Welcome Back' : 'Join Request'}</h2>
-                    <form id="authForm" class="space-y-6 mt-8">
-                        ${mode === 'register' ? '<input type="text" id="name" class="w-full px-4 py-3 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Full Name" required>' : ''}
-                        <input type="email" id="email" class="w-full px-4 py-3 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Email" required>
-                        <input type="password" id="password" class="w-full px-4 py-3 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Password" required>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-lg transition">${mode === 'login' ? 'Sign In' : 'Submit Request'}</button>
-                    </form>
-                    <div class="mt-6 text-center text-sm text-slate-500">
-                        <a href="#" onclick="renderLogin('${mode === 'login' ? 'register' : 'login'}')" class="text-blue-600 hover:underline">${mode === 'login' ? 'Request Agent Access' : 'I have an account'}</a>
+            
+            <!-- Right Login Section -->
+            <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-slate-100">
+                <div class="w-full max-w-md">
+                    <!-- Mobile Logo -->
+                    <div class="lg:hidden text-center mb-8">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-red-600 rounded-xl mb-4 shadow-lg">
+                            <i class="fas fa-pills text-3xl text-white"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold text-slate-800">PharmaConnect</h1>
                     </div>
+                    
+                    <!-- Login Card -->
+                    <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 slide-in">
+                        <div class="text-center mb-8">
+                            <h2 class="text-3xl font-bold text-slate-800">${mode === 'login' ? 'Welcome Back' : 'Join Our Team'}</h2>
+                            <p class="text-slate-500 mt-2">${mode === 'login' ? 'Sign in to access your dashboard' : 'Request access to the platform'}</p>
+                        </div>
+                        
+                        <form id="authForm" class="space-y-5">
+                            ${mode === 'register' ? `
+                                <div class="relative">
+                                    <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                    <input type="text" id="name" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-slate-50 transition" placeholder="Full Name" required>
+                                </div>
+                            ` : ''}
+                            <div class="relative">
+                                <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="email" id="email" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-slate-50 transition" placeholder="Email Address" required>
+                            </div>
+                            <div class="relative">
+                                <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="password" id="password" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-slate-50 transition" placeholder="Password" required>
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2">
+                                <span>${mode === 'login' ? 'Sign In' : 'Submit Request'}</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </form>
+                        
+                        <div class="mt-8 pt-6 border-t border-slate-100 text-center">
+                            <p class="text-slate-500 text-sm">
+                                ${mode === 'login' ? "Don't have access?" : 'Already have an account?'}
+                                <a href="#" onclick="renderLogin('${mode === 'login' ? 'register' : 'login'}')" class="text-red-600 hover:text-red-700 font-semibold ml-1">${mode === 'login' ? 'Request Access' : 'Sign In'}</a>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <p class="text-center text-slate-400 text-xs mt-6">© 2024 PharmaConnect. Secure & Trusted.</p>
                 </div>
             </div>
         </div>
