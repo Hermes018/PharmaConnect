@@ -422,10 +422,12 @@ class DataService {
             locStats[div] = (locStats[div] || 0) + (l.sale || 0);
         });
 
+        const allAgents = users.filter(u => u.role === 'agent');
         return {
             revenue,
             visits: filteredLogs.length,
-            activeAgents: users.filter(u => u.role === 'agent' && u.status === 'active').length,
+            activeAgents: allAgents.filter(u => u.status === 'active').length,
+            totalAgents: allAgents.length,
             health: inv.filter(i => i.status === 'Low Stock').length > 0 ? 'Alert' : 'Good',
             commissionPaid,
             totalDoctors: (JSON.parse(localStorage.getItem('pc_doctors')) || []).length,
@@ -844,7 +846,7 @@ window.router = async (view, range = 'all') => {
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <div class="text-slate-500 text-sm font-medium">Active Agents</div>
-                    <div class="text-3xl font-bold text-blue-600">${stats.activeAgents} / <span class="text-sm">Total</span></div>
+                    <div class="text-3xl font-bold text-blue-600">${stats.activeAgents} <span class="text-lg text-slate-400">/ ${stats.totalAgents}</span></div>
                 </div>
             </div>
             
