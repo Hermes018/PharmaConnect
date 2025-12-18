@@ -95,44 +95,76 @@ class DataService {
             localStorage.setItem('pc_locations', JSON.stringify(locs));
         }
 
-        // 5. Logs (Simulate 3 months of history for Charts & AI)
+        // 5. Logs (Simulate 3 months of history for Charts & AI - REALISTIC)
         if (!localStorage.getItem('pc_logs')) {
             const logs = [];
             const agents = JSON.parse(localStorage.getItem('pc_users')).filter(u => u.role === 'agent');
             const docs = JSON.parse(localStorage.getItem('pc_doctors'));
             const products = JSON.parse(localStorage.getItem('pc_inventory'));
             const divisions = Object.keys(JSON.parse(localStorage.getItem('pc_locations')));
+            const sentiments = ['Positive', 'Positive', 'Positive', 'Neutral', 'Neutral', 'Negative'];
 
-            // Generate 150 random historical logs
             const now = Date.now();
-            for (let i = 0; i < 150; i++) {
-                const daysAgo = Math.floor(Math.random() * 90);
+            const day = 86400000;
+            let logId = 1000;
+
+            // Generate 1-2 transactions per agent for TODAY (realistic daily sales)
+            agents.forEach(agent => {
+                const todayTransactions = Math.floor(Math.random() * 2) + 1; // 1-2 transactions today
+                for (let t = 0; t < todayTransactions; t++) {
+                    const doc = docs[Math.floor(Math.random() * docs.length)];
+                    const prod = products[Math.floor(Math.random() * products.length)];
+                    const qty = Math.floor(Math.random() * 10) + 5; // 5-15 units (realistic)
+                    const sale = prod.price * qty;
+                    const comm = Math.floor(sale * 0.05);
+                    const div = divisions[Math.floor(Math.random() * divisions.length)];
+                    const sentiment = sentiments[Math.floor(Math.random() * sentiments.length)];
+
+                    logs.push({
+                        id: logId++,
+                        time: new Date(now - Math.floor(Math.random() * day * 0.5)).toISOString(), // Today
+                        agent: agent.name,
+                        doctor: doc.name,
+                        product: prod.name,
+                        qty: qty,
+                        sale: sale,
+                        comm: comm,
+                        sentiment: sentiment,
+                        feedback: sentiment === 'Negative' ? 'Doctor complained about price' : 'Doctor requested more samples',
+                        division: div,
+                        district: div
+                    });
+                }
+            });
+
+            // Generate remaining ~120 transactions spread over past 90 days (excluding today)
+            for (let i = 0; i < 120; i++) {
+                const daysAgo = Math.floor(Math.random() * 89) + 1; // 1 to 89 days ago (not today)
                 const agent = agents[Math.floor(Math.random() * agents.length)];
                 const doc = docs[Math.floor(Math.random() * docs.length)];
                 const prod = products[Math.floor(Math.random() * products.length)];
-                const qty = Math.floor(Math.random() * 50) + 1;
+                const qty = Math.floor(Math.random() * 15) + 3; // 3-18 units
                 const sale = prod.price * qty;
-                const comm = sale * 0.05;
+                const comm = Math.floor(sale * 0.05);
                 const div = divisions[Math.floor(Math.random() * divisions.length)];
-
-                const sentiments = ['Positive', 'Positive', 'Neutral', 'Neutral', 'Negative'];
                 const sentiment = sentiments[Math.floor(Math.random() * sentiments.length)];
 
                 logs.push({
-                    id: now - i * 1000,
-                    time: new Date(now - (daysAgo * 86400000)).toISOString(),
+                    id: logId++,
+                    time: new Date(now - (daysAgo * day) - Math.floor(Math.random() * day)).toISOString(),
                     agent: agent.name,
                     doctor: doc.name,
                     product: prod.name,
                     qty: qty,
                     sale: sale,
-                    comm: Math.floor(comm),
+                    comm: comm,
                     sentiment: sentiment,
                     feedback: sentiment === 'Negative' ? 'Doctor complained about price' : 'Doctor requested more samples',
                     division: div,
-                    district: 'Dhaka'
+                    district: div
                 });
             }
+
             logs.sort((a, b) => new Date(b.time) - new Date(a.time));
             localStorage.setItem('pc_logs', JSON.stringify(logs));
         }
@@ -401,13 +433,28 @@ class DataService {
         };
     }
 
-    async getAgentStats(agentName) {
+    async getAgentStats(agentName, range = 'today') {
         await this.delay();
         const logs = JSON.parse(localStorage.getItem('pc_logs'));
-        const myLogs = logs.filter(l => l.agent === agentName);
+        let myLogs = logs.filter(l => l.agent === agentName);
+
+        // Filter by time range
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        if (range === 'today') {
+            myLogs = myLogs.filter(l => new Date(l.time) >= today);
+        } else if (range === 'week') {
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            myLogs = myLogs.filter(l => new Date(l.time) >= weekAgo);
+        } else if (range === 'month') {
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            myLogs = myLogs.filter(l => new Date(l.time) >= monthAgo);
+        }
+
         const totalComm = myLogs.reduce((acc, l) => acc + (l.comm || 0), 0);
         const totalSale = myLogs.reduce((acc, l) => acc + (l.sale || 0), 0);
-        return { totalComm, totalSale, logs: myLogs };
+        return { totalComm, totalSale, logs: myLogs, range };
     }
 
     // =========================================================================
@@ -813,22 +860,54 @@ window.router = async (view, range = 'all') => {
             </div>
         `;
 
-        // Location Chart
+        // Colorful colors for charts
+        const chartColors = [
+            '#ef4444', '#f97316', '#eab308', '#22c55e',
+            '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
+        ];
+
+        // Location Chart - Colorful bars
         new Chart(document.getElementById('locChart'), {
             type: 'bar',
             data: {
                 labels: Object.keys(stats.locStats),
-                datasets: [{ label: 'Sales (৳)', data: Object.values(stats.locStats), backgroundColor: '#0ea5e9', borderRadius: 4 }]
+                datasets: [{
+                    label: 'Sales (৳)',
+                    data: Object.values(stats.locStats),
+                    backgroundColor: chartColors.slice(0, Object.keys(stats.locStats).length),
+                    borderRadius: 6
+                }]
             },
-            options: { scales: { y: { beginAtZero: true } } }
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
         });
 
-        // Product Chart
+        // Product Chart - Colorful doughnut with actual data
+        const logs = await db.getLogs();
+        const productSales = {};
+        logs.forEach(l => {
+            productSales[l.product] = (productSales[l.product] || 0) + (l.sale || 0);
+        });
+        const sortedProducts = Object.entries(productSales)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6);
+
         new Chart(document.getElementById('topProdChart'), {
             type: 'doughnut',
             data: {
-                labels: ['Napa', 'Ace', 'Sergel', 'Seclo', 'Tufnil'],
-                datasets: [{ label: 'Units', data: [120, 95, 80, 45, 30], backgroundColor: ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#1e40af'] }]
+                labels: sortedProducts.map(p => p[0]),
+                datasets: [{
+                    label: 'Sales (৳)',
+                    data: sortedProducts.map(p => p[1]),
+                    backgroundColor: ['#3b82f6', '#ef4444', '#22c55e', '#f97316', '#8b5cf6', '#06b6d4']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
             }
         });
 
@@ -916,26 +995,60 @@ window.router = async (view, range = 'all') => {
     } else if (view === 'analysis') {
         const logs = await db.getLogs();
         const performersTable = await renderTopPerformers();
+        const locations = await db.getLocations();
+        const doctors = await db.getDoctors();
 
         container.innerHTML = `
             <h2 class="text-2xl font-bold mb-6 slide-in">Intelligence & Analytics</h2>
             
             ${performersTable}
             
-            <div class="bg-white rounded-xl shadow border border-slate-200 slide-in mt-6">
-                <div class="p-6 border-b border-slate-100"><h3 class="font-bold">Activity Feed & Feedback</h3></div>
+            <!-- Filter Bar -->
+            <div class="bg-white rounded-xl shadow border border-slate-200 slide-in mt-6 p-4">
+                <div class="flex flex-wrap gap-3 items-center">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-slate-600">From:</label>
+                        <input type="date" id="filter-start" class="border rounded px-2 py-1 text-sm">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-slate-600">To:</label>
+                        <input type="date" id="filter-end" class="border rounded px-2 py-1 text-sm">
+                    </div>
+                    <select id="filter-division" class="border rounded px-3 py-1 text-sm">
+                        <option value="">All Divisions</option>
+                        ${Object.keys(locations).map(d => `<option value="${d}">${d}</option>`).join('')}
+                    </select>
+                    <select id="filter-doctor" class="border rounded px-3 py-1 text-sm">
+                        <option value="">All Doctors</option>
+                        ${doctors.map(d => `<option value="${d.name}">${d.name}</option>`).join('')}
+                    </select>
+                    <button onclick="applyAnalyticsFilters()" class="bg-blue-600 text-white px-4 py-1 rounded text-sm font-semibold hover:bg-blue-700">
+                        <i class="fas fa-filter"></i> Apply
+                    </button>
+                    <button onclick="resetAnalyticsFilters()" class="bg-slate-200 text-slate-700 px-4 py-1 rounded text-sm font-semibold hover:bg-slate-300">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
+                <div id="filter-summary" class="mt-2 text-xs text-slate-500"></div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow border border-slate-200 slide-in mt-4">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="font-bold">Activity Feed & Feedback</h3>
+                    <span id="log-count" class="text-xs text-slate-500">${logs.length} records</span>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
-                            <tr><th class="p-4">Time</th><th class="p-4">Agent</th><th class="p-4">Details</th><th class="p-4">Loc</th><th class="p-4">Feedback/Notes</th><th class="p-4">Sale</th></tr>
+                            <tr><th class="p-4">Date</th><th class="p-4">Agent</th><th class="p-4">Details</th><th class="p-4">Loc</th><th class="p-4">Feedback/Notes</th><th class="p-4">Sale</th></tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${logs.slice(0, 15).map(l => `
+                        <tbody id="analytics-table-body" class="divide-y divide-slate-100">
+                            ${logs.slice(0, 20).map(l => `
                                 <tr>
-                                    <td class="p-4 text-xs w-32">${new Date(l.time).toLocaleTimeString()}</td>
+                                    <td class="p-4 text-xs w-32">${new Date(l.time).toLocaleDateString()}</td>
                                     <td class="p-4 text-xs font-bold">${l.agent}</td>
                                     <td class="p-4 text-sm">${l.product} x${l.qty} (${l.doctor})</td>
-                                    <td class="p-4 text-xs text-slate-500">${l.division}/${l.district}</td>
+                                    <td class="p-4 text-xs text-slate-500">${l.division}</td>
                                     <td class="p-4 text-sm text-slate-600 italic">"${l.feedback || 'No notes'}"</td>
                                     <td class="p-4 text-sm font-semibold">৳ ${l.sale || 0}</td>
                                 </tr>
@@ -945,6 +1058,61 @@ window.router = async (view, range = 'all') => {
                 </div>
             </div>
         `;
+
+        // Store logs for filtering
+        window.allLogs = logs;
+
+        // Filter functions
+        window.applyAnalyticsFilters = () => {
+            const startDate = document.getElementById('filter-start').value;
+            const endDate = document.getElementById('filter-end').value;
+            const division = document.getElementById('filter-division').value;
+            const doctor = document.getElementById('filter-doctor').value;
+
+            let filtered = [...window.allLogs];
+
+            if (startDate) {
+                filtered = filtered.filter(l => new Date(l.time) >= new Date(startDate));
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59);
+                filtered = filtered.filter(l => new Date(l.time) <= end);
+            }
+            if (division) {
+                filtered = filtered.filter(l => l.division === division);
+            }
+            if (doctor) {
+                filtered = filtered.filter(l => l.doctor === doctor);
+            }
+
+            // Update table
+            const tbody = document.getElementById('analytics-table-body');
+            tbody.innerHTML = filtered.slice(0, 50).map(l => `
+                <tr>
+                    <td class="p-4 text-xs w-32">${new Date(l.time).toLocaleDateString()}</td>
+                    <td class="p-4 text-xs font-bold">${l.agent}</td>
+                    <td class="p-4 text-sm">${l.product} x${l.qty} (${l.doctor})</td>
+                    <td class="p-4 text-xs text-slate-500">${l.division}</td>
+                    <td class="p-4 text-sm text-slate-600 italic">"${l.feedback || 'No notes'}"</td>
+                    <td class="p-4 text-sm font-semibold">৳ ${l.sale || 0}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" class="p-4 text-center text-slate-500">No records match filters</td></tr>';
+
+            // Update count and summary
+            document.getElementById('log-count').textContent = `${filtered.length} records`;
+            const totalSales = filtered.reduce((sum, l) => sum + (l.sale || 0), 0);
+            document.getElementById('filter-summary').textContent = `Showing ${Math.min(filtered.length, 50)} of ${filtered.length} records | Total Sales: ৳ ${totalSales.toLocaleString()}`;
+        };
+
+        window.resetAnalyticsFilters = () => {
+            document.getElementById('filter-start').value = '';
+            document.getElementById('filter-end').value = '';
+            document.getElementById('filter-division').value = '';
+            document.getElementById('filter-doctor').value = '';
+            document.getElementById('filter-summary').textContent = '';
+            router('analysis');
+        };
     }
 };
 
@@ -1010,11 +1178,13 @@ window.editAgent = (id) => {
 // AGENT VIEW
 // =============================================================================
 
-const renderAgent = async (user) => {
+const renderAgent = async (user, range = 'today') => {
     const locations = await db.getLocations();
     const inv = await db.getInventory();
     const doctors = await db.getDoctors();
-    const stats = await db.getAgentStats(user.name);
+    const stats = await db.getAgentStats(user.name, range);
+
+    const rangeLabels = { 'today': "Today's", 'week': 'This Week\'s', 'month': 'This Month\'s' };
 
     app.innerHTML = `
         <div class="min-h-screen bg-slate-100 pb-20">
@@ -1026,9 +1196,19 @@ const renderAgent = async (user) => {
                     </div>
                     <button onclick="logout()" class="text-sm bg-blue-700 px-3 py-1 rounded">Logout</button>
                 </div>
-                <div class="bg-blue-700 rounded-lg p-3 flex justify-between items-center text-sm">
-                    <span>Today's Sales: ৳ ${stats.totalSale.toLocaleString()}</span>
-                    <span class="font-bold text-yellow-300">Comm: ৳ ${stats.totalComm.toLocaleString()}</span>
+                <div class="bg-blue-700 rounded-lg p-3">
+                    <div class="flex justify-between items-center text-sm mb-2">
+                        <select id="agentTimeFilter" onchange="updateAgentStats()" class="bg-blue-800 text-white px-2 py-1 rounded text-xs border border-blue-500">
+                            <option value="today" ${range === 'today' ? 'selected' : ''}>Today</option>
+                            <option value="week" ${range === 'week' ? 'selected' : ''}>This Week</option>
+                            <option value="month" ${range === 'month' ? 'selected' : ''}>This Month</option>
+                        </select>
+                        <span class="font-bold text-yellow-300">Comm: ৳ ${stats.totalComm.toLocaleString()}</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-2xl font-bold">৳ ${stats.totalSale.toLocaleString()}</span>
+                        <span class="text-xs text-blue-200 ml-2">${rangeLabels[range]} Sales</span>
+                    </div>
                 </div>
             </div>
 
@@ -1109,6 +1289,12 @@ const renderAgent = async (user) => {
         });
     };
     setTab('manual');
+
+    // Time filter handler for agent stats
+    window.updateAgentStats = () => {
+        const range = document.getElementById('agentTimeFilter').value;
+        renderAgent(user, range);
+    };
 
     window.submitManual = async () => {
         const doctor = document.getElementById('m-doc').value;
