@@ -773,8 +773,153 @@ const renderAdmin = async (user, range = 'all') => {
                 <div class="p-4 border-t border-slate-700"><button onclick="logout()" class="w-full px-4 py-2 border border-slate-600 rounded-lg hover:bg-slate-800 text-sm">Log Out</button></div>
             </aside>
             <main class="md:ml-64 flex-1 p-8 overflow-y-auto"><div id="admin-content" class="max-w-7xl mx-auto space-y-8"></div></main>
+            
+            <!-- AI Chat Button -->
+            <button onclick="toggleAIChat()" id="ai-chat-btn" class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full shadow-lg hover:shadow-xl transition-all z-40 flex items-center justify-center text-white text-xl hover:scale-110">
+                <i class="fas fa-robot"></i>
+            </button>
+            
+            <!-- AI Chat Panel -->
+            <div id="ai-chat-panel" class="fixed bottom-24 right-6 w-96 bg-white rounded-2xl shadow-2xl z-40 hidden overflow-hidden border border-slate-200" style="max-height: 500px;">
+                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold">PharmaConnect AI</h3>
+                                <p class="text-xs text-purple-200">Powered by Gemini</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleAIChat()" class="text-white/70 hover:text-white"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <div id="ai-chat-messages" class="p-4 h-64 overflow-y-auto space-y-3 bg-slate-50">
+                    <div class="bg-purple-100 text-purple-800 p-3 rounded-xl text-sm">
+                        <p class="font-semibold mb-2">👋 Hi! I can analyze your data. Try asking:</p>
+                        <ul class="text-xs space-y-1 text-purple-700">
+                            <li>• "Which agent has the highest sales?"</li>
+                            <li>• "What's selling best in Dhaka?"</li>
+                            <li>• "Show me low stock medicines"</li>
+                            <li>• "Compare this week vs last week"</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="p-3 border-t border-slate-200 bg-white">
+                    <div class="flex gap-2">
+                        <input type="text" id="ai-chat-input" class="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Ask about your data..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+                        <button onclick="sendAIMessage()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl transition">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
+
+    // AI Chat Functions
+    window.toggleAIChat = () => {
+        const panel = document.getElementById('ai-chat-panel');
+        panel.classList.toggle('hidden');
+    };
+
+    window.sendAIMessage = async () => {
+        const input = document.getElementById('ai-chat-input');
+        const message = input.value.trim();
+        if (!message) return;
+
+        const messagesDiv = document.getElementById('ai-chat-messages');
+
+        // Add user message
+        messagesDiv.innerHTML += `
+            <div class="flex justify-end">
+                <div class="bg-blue-600 text-white p-3 rounded-xl text-sm max-w-[80%]">${message}</div>
+            </div>
+        `;
+        input.value = '';
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        // Show loading
+        messagesDiv.innerHTML += `
+            <div id="ai-loading" class="flex items-center gap-2 text-slate-500 text-sm">
+                <i class="fas fa-spinner fa-spin"></i> Analyzing...
+            </div>
+        `;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        try {
+            // Gather context data
+            const logs = JSON.parse(localStorage.getItem('pc_logs')) || [];
+            const inventory = JSON.parse(localStorage.getItem('pc_inventory')) || [];
+            const doctors = JSON.parse(localStorage.getItem('pc_doctors')) || [];
+            const users = JSON.parse(localStorage.getItem('pc_users')) || [];
+            const agents = users.filter(u => u.role === 'agent');
+
+            // Summarize data for context
+            const dataContext = {
+                totalSales: logs.reduce((sum, l) => sum + (l.sale || 0), 0),
+                totalOrders: logs.length,
+                agentCount: agents.length,
+                doctorCount: doctors.length,
+                inventoryCount: inventory.length,
+                recentLogs: logs.slice(0, 20).map(l => ({
+                    agent: l.agent,
+                    product: l.product,
+                    qty: l.qty,
+                    sale: l.sale,
+                    doctor: l.doctor,
+                    division: l.division,
+                    date: new Date(l.time).toLocaleDateString()
+                })),
+                inventory: inventory.map(i => ({ name: i.name, stock: i.stock, price: i.price, status: i.status })),
+                agents: agents.map(a => a.name),
+                doctors: doctors.map(d => ({ name: d.name, hospital: d.hospital }))
+            };
+
+            const prompt = `You are an AI assistant for PharmaConnect, a pharmaceutical sales management system in Bangladesh. 
+            
+Here is the current data context:
+${JSON.stringify(dataContext, null, 2)}
+
+User question: ${message}
+
+Please provide a concise, helpful answer based on the data. Use Bengali Taka (৳) for currency. Keep response under 150 words.`;
+
+            // Call Gemini API
+            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyAl2T0iqJUgPJuX-3vnpVd3o7df8-NgNdU', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            const data = await response.json();
+            const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not process that request.';
+
+            // Remove loading and add response
+            document.getElementById('ai-loading')?.remove();
+            messagesDiv.innerHTML += `
+                <div class="bg-white border border-slate-200 p-3 rounded-xl text-sm text-slate-700 shadow-sm">
+                    <div class="flex items-center gap-2 text-purple-600 font-semibold mb-1">
+                        <i class="fas fa-robot"></i> AI Response
+                    </div>
+                    ${aiResponse.replace(/\n/g, '<br>')}
+                </div>
+            `;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        } catch (error) {
+            document.getElementById('ai-loading')?.remove();
+            messagesDiv.innerHTML += `
+                <div class="bg-red-100 text-red-700 p-3 rounded-xl text-sm">
+                    <i class="fas fa-exclamation-triangle"></i> Error: ${error.message}
+                </div>
+            `;
+        }
+    };
+
     window.router('overview', range);
 };
 
