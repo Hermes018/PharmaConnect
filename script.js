@@ -723,7 +723,7 @@ const renderLogin = (mode = 'login') => {
                     </div>
                     
                     <!-- Footer -->
-                    <p class="text-center text-slate-400 text-xs mt-6">© 2024 PharmaConnect. Secure & Trusted.</p>
+                    <p class="text-center text-slate-400 text-xs mt-6">© 2025 PharmaConnect. Secure & Trusted.</p>
                 </div>
             </div>
         </div>
@@ -1271,89 +1271,163 @@ const renderAgent = async (user, range = 'today') => {
     const stats = await db.getAgentStats(user.name, range);
 
     const rangeLabels = { 'today': "Today's", 'week': 'This Week\'s', 'month': 'This Month\'s' };
+    const orderCount = stats.logs.length;
 
     app.innerHTML = `
-        <div class="min-h-screen bg-slate-100 pb-20">
-            <div class="bg-blue-600 text-white p-4 sticky top-0 z-30 shadow-md">
-                <div class="flex justify-between items-center mb-2">
-                    <div>
-                        <h1 class="font-bold text-lg">Agent Terminal</h1>
-                        <p class="text-xs text-blue-100">${user.name}</p>
+        <div class="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 pb-24">
+            <!-- Header with Gradient -->
+            <div class="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white p-5 sticky top-0 z-30 shadow-lg">
+                <div class="max-w-lg mx-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-user-tie text-lg"></i>
+                            </div>
+                            <div>
+                                <h1 class="font-bold text-lg">Agent Terminal</h1>
+                                <p class="text-xs text-blue-200">${user.name}</p>
+                            </div>
+                        </div>
+                        <button onclick="logout()" class="text-sm bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        </button>
                     </div>
-                    <button onclick="logout()" class="text-sm bg-blue-700 px-3 py-1 rounded">Logout</button>
-                </div>
-                <div class="bg-blue-700 rounded-lg p-3">
-                    <div class="flex justify-between items-center text-sm mb-2">
-                        <select id="agentTimeFilter" onchange="updateAgentStats()" class="bg-blue-800 text-white px-2 py-1 rounded text-xs border border-blue-500">
-                            <option value="today" ${range === 'today' ? 'selected' : ''}>Today</option>
-                            <option value="week" ${range === 'week' ? 'selected' : ''}>This Week</option>
-                            <option value="month" ${range === 'month' ? 'selected' : ''}>This Month</option>
-                        </select>
-                        <span class="font-bold text-yellow-300">Comm: ৳ ${stats.totalComm.toLocaleString()}</span>
-                    </div>
-                    <div class="text-center">
-                        <span class="text-2xl font-bold">৳ ${stats.totalSale.toLocaleString()}</span>
-                        <span class="text-xs text-blue-200 ml-2">${rangeLabels[range]} Sales</span>
-                    </div>
+                    
+                    <!-- Time Filter -->
+                    <select id="agentTimeFilter" onchange="updateAgentStats()" class="w-full bg-white/10 backdrop-blur text-white px-4 py-2 rounded-lg text-sm border border-white/20 mb-4">
+                        <option value="today" ${range === 'today' ? 'selected' : ''} class="text-slate-800">📅 Today</option>
+                        <option value="week" ${range === 'week' ? 'selected' : ''} class="text-slate-800">📆 This Week</option>
+                        <option value="month" ${range === 'month' ? 'selected' : ''} class="text-slate-800">🗓️ This Month</option>
+                    </select>
                 </div>
             </div>
-
-            <div class="p-4 space-y-4 max-w-lg mx-auto">
-                <div class="bg-white p-4 rounded-xl shadow-sm">
-                    <select id="divisionSelect" class="w-full p-2 mb-2 border rounded bg-slate-50">
-                        <option value="">Division</option>
-                        ${Object.keys(locations).map(d => `<option>${d}</option>`).join('')}
-                    </select>
-                    <select id="districtSelect" class="w-full p-2 border rounded bg-slate-50" disabled>
-                        <option>District</option>
-                    </select>
+            
+            <!-- Stats Cards -->
+            <div class="max-w-lg mx-auto px-4 -mt-2">
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="bg-white rounded-xl p-4 shadow-lg border border-slate-100 text-center">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-coins text-green-600"></i>
+                        </div>
+                        <div class="text-xl font-bold text-slate-800">৳${stats.totalSale.toLocaleString()}</div>
+                        <div class="text-xs text-slate-500">${rangeLabels[range]} Sales</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-lg border border-slate-100 text-center">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-hand-holding-usd text-yellow-600"></i>
+                        </div>
+                        <div class="text-xl font-bold text-yellow-600">৳${stats.totalComm.toLocaleString()}</div>
+                        <div class="text-xs text-slate-500">Commission</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-lg border border-slate-100 text-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-clipboard-list text-blue-600"></i>
+                        </div>
+                        <div class="text-xl font-bold text-slate-800">${orderCount}</div>
+                        <div class="text-xs text-slate-500">Orders</div>
+                    </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-                    <div class="flex border-b border-slate-100">
-                        <button onclick="setTab('manual')" id="btn-manual" class="flex-1 py-3 text-sm font-semibold border-b-2">Manual</button>
-                        <button onclick="setTab('smart')" id="btn-smart" class="flex-1 py-3 text-sm font-semibold border-b-2">Smart AI</button>
-                        <button onclick="setTab('history')" id="btn-history" class="flex-1 py-3 text-sm font-semibold border-b-2">History</button>
+                <!-- Location Selector -->
+                <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-100 mb-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-map-marker-alt text-red-500"></i>
+                        <span class="font-semibold text-slate-700">Select Location</span>
                     </div>
-                    <div class="p-5 min-h-[300px]">
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="divisionSelect" class="p-3 border border-slate-200 rounded-lg bg-slate-50 text-sm">
+                            <option value="">Select Division</option>
+                            ${Object.keys(locations).map(d => `<option>${d}</option>`).join('')}
+                        </select>
+                        <select id="districtSelect" class="p-3 border border-slate-200 rounded-lg bg-slate-50 text-sm" disabled>
+                            <option>Select District</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tabs Card -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
+                    <div class="flex bg-slate-50 border-b border-slate-200">
+                        <button onclick="setTab('manual')" id="btn-manual" class="flex-1 py-4 text-sm font-semibold border-b-2 flex items-center justify-center gap-2">
+                            <i class="fas fa-edit"></i> Manual
+                        </button>
+                        <button onclick="setTab('smart')" id="btn-smart" class="flex-1 py-4 text-sm font-semibold border-b-2 flex items-center justify-center gap-2">
+                            <i class="fas fa-robot"></i> Smart AI
+                        </button>
+                        <button onclick="setTab('history')" id="btn-history" class="flex-1 py-4 text-sm font-semibold border-b-2 flex items-center justify-center gap-2">
+                            <i class="fas fa-history"></i> History
+                        </button>
+                    </div>
+                    <div class="p-5 min-h-[320px]">
+                        <!-- Manual Tab -->
                         <div id="tab-manual" class="space-y-4">
-                            <select id="m-doc" class="w-full p-3 border rounded">
-                                <option value="">Select Doctor</option>
-                                ${doctors.map(d => `<option value="${d.name}">${d.name} (${d.hospital})</option>`).join('')}
-                            </select>
-                            <select id="m-prod" class="w-full p-3 border rounded">
-                                <option value="">Select Medicine</option>
-                                ${inv.map(i => `<option value="${i.name}">${i.name} (৳${i.price})</option>`).join('')}
-                            </select>
-                            <input type="number" id="m-qty" class="w-full p-3 border rounded" placeholder="Quantity">
-                            <textarea id="m-feedback" class="w-full p-3 border rounded h-20" placeholder="Feedback / Notes (Optional)"></textarea>
-                            <button onclick="submitManual()" class="w-full bg-blue-600 text-white font-bold py-3 rounded shadow hover:bg-blue-700">Submit Log</button>
+                            <div class="relative">
+                                <i class="fas fa-user-md absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <select id="m-doc" class="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl bg-slate-50 text-sm">
+                                    <option value="">Select Doctor</option>
+                                    ${doctors.map(d => `<option value="${d.name}">${d.name} (${d.hospital})</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="relative">
+                                <i class="fas fa-pills absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <select id="m-prod" class="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl bg-slate-50 text-sm">
+                                    <option value="">Select Medicine</option>
+                                    ${inv.map(i => `<option value="${i.name}">${i.name} (৳${i.price})</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="relative">
+                                <i class="fas fa-sort-numeric-up absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="number" id="m-qty" class="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl bg-slate-50 text-sm" placeholder="Quantity">
+                            </div>
+                            <textarea id="m-feedback" class="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-sm h-20" placeholder="Feedback / Notes (Optional)"></textarea>
+                            <button onclick="submitManual()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                                <i class="fas fa-paper-plane"></i> Submit Log
+                            </button>
                         </div>
+                        
+                        <!-- Smart AI Tab -->
                         <div id="tab-smart" class="hidden">
-                            <p class="text-xs text-slate-500 mb-2">Try: "Sold 10 Napa to Dr. Hasan"</p>
-                            <textarea id="smart-in" class="w-full p-3 border rounded mb-4 h-32" placeholder="Type here..."></textarea>
-                            <button onclick="submitSmart()" class="w-full bg-purple-600 text-white font-bold py-3 rounded shadow">Process</button>
+                            <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4">
+                                <div class="flex items-center gap-2 text-purple-700 mb-2">
+                                    <i class="fas fa-robot"></i>
+                                    <span class="font-semibold">AI-Powered Entry</span>
+                                </div>
+                                <p class="text-xs text-purple-600">Try: "Sold 10 Napa to Dr. Hasan" or "gave twenty sergel to doctor Kamal, he was happy"</p>
+                            </div>
+                            <textarea id="smart-in" class="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-sm h-32 mb-4" placeholder="Describe your sale in natural language..."></textarea>
+                            <button onclick="submitSmart()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                                <i class="fas fa-magic"></i> Process with AI
+                            </button>
                         </div>
-                        <div id="tab-history" class="hidden h-[300px] overflow-y-auto">
-                            <table class="w-full text-left text-sm">
-                                <thead>
-                                    <tr class="text-slate-500 border-b">
-                                        <th class="pb-2">Details</th>
-                                        <th class="pb-2 text-right">Comm.</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y">
+                        
+                        <!-- History Tab -->
+                        <div id="tab-history" class="hidden h-[320px] overflow-y-auto">
+                            ${stats.logs.length === 0 ? `
+                                <div class="text-center py-12 text-slate-400">
+                                    <i class="fas fa-inbox text-4xl mb-3"></i>
+                                    <p>No transactions yet</p>
+                                </div>
+                            ` : `
+                                <div class="space-y-3">
                                     ${stats.logs.map(l => `
-                                        <tr>
-                                            <td class="py-2">
-                                                <div>${l.product} x${l.qty}</div>
-                                                <div class="text-xs text-slate-400">${l.doctor} (${l.district})</div>
-                                            </td>
-                                            <td class="py-2 text-right font-medium text-green-600">+৳${l.comm || 0}</td>
-                                        </tr>
+                                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-pills text-blue-600"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold text-sm text-slate-800">${l.product} x${l.qty}</div>
+                                                    <div class="text-xs text-slate-500">${l.doctor} • ${l.division}</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="font-bold text-green-600">+৳${l.comm || 0}</div>
+                                                <div class="text-xs text-slate-400">${new Date(l.time).toLocaleDateString()}</div>
+                                            </div>
+                                        </div>
                                     `).join('')}
-                                </tbody>
-                            </table>
+                                </div>
+                            `}
                         </div>
                     </div>
                 </div>
