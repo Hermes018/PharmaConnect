@@ -26,7 +26,8 @@ class DataService {
                 { id: 8, name: 'Rubana Huq', email: 'rubana@pharma.com' },
                 { id: 9, name: 'Zafar Iqbal', email: 'zafar@pharma.com' },
                 { id: 10, name: 'Tahsan Khan', email: 'tahsan@pharma.com' },
-                { id: 11, name: 'Nusrat Faria', email: 'nusrat@pharma.com' }
+                { id: 11, name: 'Nusrat Faria', email: 'nusrat@pharma.com' },
+                { id: 12, name: 'Sheikh Subhana Bayezid', email: 'subu@pharma.com' }
             ];
 
             const users = [
