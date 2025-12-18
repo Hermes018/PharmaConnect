@@ -1275,58 +1275,65 @@ const renderAgent = async (user, range = 'today') => {
 
     app.innerHTML = `
         <div class="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 pb-24">
-            <!-- Header with Gradient -->
-            <div class="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white p-5 sticky top-0 z-30 shadow-lg">
-                <div class="max-w-lg mx-auto">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-user-tie text-lg"></i>
-                            </div>
-                            <div>
-                                <h1 class="font-bold text-lg">Agent Terminal</h1>
-                                <p class="text-xs text-blue-200">${user.name}</p>
-                            </div>
+            <!-- Full-Width Header -->
+            <div class="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white sticky top-0 z-30 shadow-xl">
+                <!-- Top Bar with Logout -->
+                <div class="flex justify-between items-center px-4 py-2 border-b border-white/10">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-flask text-blue-200"></i>
+                        <span class="text-sm font-medium text-blue-100">PharmaConnect</span>
+                    </div>
+                    <button onclick="logout()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+                
+                <!-- Main Header Content -->
+                <div class="px-4 py-4">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-user-tie text-2xl"></i>
                         </div>
-                        <button onclick="logout()" class="text-sm bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition">
-                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
-                        </button>
+                        <div class="flex-1">
+                            <h1 class="font-bold text-xl">Agent Terminal</h1>
+                            <p class="text-sm text-blue-200">${user.name}</p>
+                        </div>
+                        <select id="agentTimeFilter" onchange="updateAgentStats()" class="bg-white/10 backdrop-blur text-white px-3 py-2 rounded-lg text-sm border border-white/20">
+                            <option value="today" ${range === 'today' ? 'selected' : ''} class="text-slate-800">📅 Today</option>
+                            <option value="week" ${range === 'week' ? 'selected' : ''} class="text-slate-800">📆 Week</option>
+                            <option value="month" ${range === 'month' ? 'selected' : ''} class="text-slate-800">🗓️ Month</option>
+                        </select>
                     </div>
                     
-                    <!-- Time Filter -->
-                    <select id="agentTimeFilter" onchange="updateAgentStats()" class="w-full bg-white/10 backdrop-blur text-white px-4 py-2 rounded-lg text-sm border border-white/20 mb-4">
-                        <option value="today" ${range === 'today' ? 'selected' : ''} class="text-slate-800">📅 Today</option>
-                        <option value="week" ${range === 'week' ? 'selected' : ''} class="text-slate-800">📆 This Week</option>
-                        <option value="month" ${range === 'month' ? 'selected' : ''} class="text-slate-800">🗓️ This Month</option>
-                    </select>
+                    <!-- Stats Cards IN Header -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-white/10 backdrop-blur rounded-xl p-3 text-center border border-white/10">
+                            <div class="flex items-center justify-center gap-2 mb-1">
+                                <i class="fas fa-coins text-green-300"></i>
+                                <span class="text-xs text-blue-200">${rangeLabels[range]} Sales</span>
+                            </div>
+                            <div class="text-xl font-bold">৳${stats.totalSale.toLocaleString()}</div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur rounded-xl p-3 text-center border border-white/10">
+                            <div class="flex items-center justify-center gap-2 mb-1">
+                                <i class="fas fa-hand-holding-usd text-yellow-300"></i>
+                                <span class="text-xs text-blue-200">Commission</span>
+                            </div>
+                            <div class="text-xl font-bold text-yellow-300">৳${stats.totalComm.toLocaleString()}</div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur rounded-xl p-3 text-center border border-white/10">
+                            <div class="flex items-center justify-center gap-2 mb-1">
+                                <i class="fas fa-clipboard-check text-cyan-300"></i>
+                                <span class="text-xs text-blue-200">Orders</span>
+                            </div>
+                            <div class="text-xl font-bold">${orderCount}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <!-- Stats Cards -->
-            <div class="max-w-lg mx-auto px-4 -mt-2">
-                <div class="grid grid-cols-3 gap-3 mb-4">
-                    <div class="bg-white rounded-xl p-4 shadow-lg border border-slate-100 text-center">
-                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <i class="fas fa-coins text-green-600"></i>
-                        </div>
-                        <div class="text-xl font-bold text-slate-800">৳${stats.totalSale.toLocaleString()}</div>
-                        <div class="text-xs text-slate-500">${rangeLabels[range]} Sales</div>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 shadow-lg border border-slate-100 text-center">
-                        <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <i class="fas fa-hand-holding-usd text-yellow-600"></i>
-                        </div>
-                        <div class="text-xl font-bold text-yellow-600">৳${stats.totalComm.toLocaleString()}</div>
-                        <div class="text-xs text-slate-500">Commission</div>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 shadow-lg border border-slate-100 text-center">
-                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <i class="fas fa-clipboard-list text-blue-600"></i>
-                        </div>
-                        <div class="text-xl font-bold text-slate-800">${orderCount}</div>
-                        <div class="text-xs text-slate-500">Orders</div>
-                    </div>
-                </div>
+            <!-- Content Area - Full Width -->
+            <div class="px-4 py-4 max-w-2xl mx-auto">
 
                 <!-- Location Selector -->
                 <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-100 mb-4">
