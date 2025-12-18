@@ -1,0 +1,134 @@
+/* PharmaConnect Intelligence Dashboard - Styles */
+
+/* Base Typography */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f1f5f9;
+}
+
+/* Animations */
+.slide-in {
+    animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+/* Stock Prediction Alert Styles */
+.prediction-alert {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-left: 4px solid #ef4444;
+}
+
+.prediction-alert-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.risk-critical {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.risk-warning {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.risk-safe {
+    color: #10b981;
+    font-weight: 600;
+}
+
+/* Top Performers Leaderboard Styles */
+.leaderboard-gold {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #f59e0b;
+}
+
+.leaderboard-gold td {
+    font-weight: 600;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.rank-1 {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
+
+.rank-2 {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    color: white;
+}
+
+.rank-3 {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    color: white;
+}
+
+.rank-other {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+/* Sentiment Score Badge */
+.sentiment-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.sentiment-high {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.sentiment-medium {
+    background: #fef9c3;
+    color: #854d0e;
+}
+
+.sentiment-low {
+    background: #fee2e2;
+    color: #991b1b;
+}
