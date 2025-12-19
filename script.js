@@ -877,26 +877,23 @@ const renderAdmin = async (user, range = 'all') => {
                 doctors: doctors.map(d => ({ name: d.name, hospital: d.hospital }))
             };
 
-            const prompt = `You are an AI assistant for PharmaConnect, a pharmaceutical sales management system in Bangladesh. 
-            
-Here is the current data context:
-${JSON.stringify(dataContext, null, 2)}
-
-User question: ${message}
-
-Please provide a concise, helpful answer based on the data. Use Bengali Taka (৳) for currency. Keep response under 150 words.`;
-
-            // Call Gemini API
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyAl2T0iqJUgPJuX-3vnpVd3o7df8-NgNdU', {
+            // Call our secure API endpoint (key hidden on server)
+            const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }]
+                    message: message,
+                    dataContext: dataContext
                 })
             });
 
             const data = await response.json();
-            const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not process that request.';
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            const aiResponse = data.response || 'Sorry, I could not process that request.';
 
             // Remove loading and add response
             document.getElementById('ai-loading')?.remove();
