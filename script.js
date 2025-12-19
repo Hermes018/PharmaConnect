@@ -780,7 +780,7 @@ const renderAdmin = async (user, range = 'all') => {
             </button>
             
             <!-- AI Chat Panel -->
-            <div id="ai-chat-panel" class="fixed bottom-24 right-6 w-96 bg-white rounded-2xl shadow-2xl z-40 hidden overflow-hidden border border-slate-200" style="max-height: 500px;">
+            <div id="ai-chat-panel" class="fixed bottom-24 right-6 w-96 bg-white rounded-2xl shadow-2xl z-40 hidden overflow-hidden border border-slate-200" style="max-height: 520px;">
                 <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
@@ -792,7 +792,12 @@ const renderAdmin = async (user, range = 'all') => {
                                 <p class="text-xs text-purple-200">Powered by Gemini</p>
                             </div>
                         </div>
-                        <button onclick="toggleAIChat()" class="text-white/70 hover:text-white"><i class="fas fa-times"></i></button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleAILanguage()" id="ai-lang-btn" class="text-xs bg-white/20 px-2 py-1 rounded-lg hover:bg-white/30 transition" title="Switch Language">
+                                🇬🇧 EN
+                            </button>
+                            <button onclick="toggleAIChat()" class="text-white/70 hover:text-white"><i class="fas fa-times"></i></button>
+                        </div>
                     </div>
                 </div>
                 <div id="ai-chat-messages" class="p-4 h-64 overflow-y-auto space-y-3 bg-slate-50">
@@ -819,9 +824,21 @@ const renderAdmin = async (user, range = 'all') => {
     `;
 
     // AI Chat Functions
+    let aiLanguage = 'en'; // 'en' or 'bn'
+
     window.toggleAIChat = () => {
         const panel = document.getElementById('ai-chat-panel');
         panel.classList.toggle('hidden');
+    };
+
+    window.toggleAILanguage = () => {
+        aiLanguage = aiLanguage === 'en' ? 'bn' : 'en';
+        const btn = document.getElementById('ai-lang-btn');
+        btn.innerHTML = aiLanguage === 'en' ? '🇬🇧 EN' : '🇧🇩 বাংলা';
+
+        // Update placeholder
+        const input = document.getElementById('ai-chat-input');
+        input.placeholder = aiLanguage === 'en' ? 'Ask about your data...' : 'আপনার ডেটা সম্পর্কে জিজ্ঞাসা করুন...';
     };
 
     window.sendAIMessage = async () => {
@@ -841,9 +858,10 @@ const renderAdmin = async (user, range = 'all') => {
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
         // Show loading
+        const loadingText = aiLanguage === 'en' ? 'Analyzing...' : 'বিশ্লেষণ করা হচ্ছে...';
         messagesDiv.innerHTML += `
             <div id="ai-loading" class="flex items-center gap-2 text-slate-500 text-sm">
-                <i class="fas fa-spinner fa-spin"></i> Analyzing...
+                <i class="fas fa-spinner fa-spin"></i> ${loadingText}
             </div>
         `;
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -883,7 +901,8 @@ const renderAdmin = async (user, range = 'all') => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: message,
-                    dataContext: dataContext
+                    dataContext: dataContext,
+                    language: aiLanguage
                 })
             });
 
