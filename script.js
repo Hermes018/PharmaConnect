@@ -1279,6 +1279,29 @@ window.router = async (view, range = 'all') => {
                 <div id="filter-summary" class="mt-2 text-xs text-slate-500"></div>
             </div>
             
+            <!-- Medicine Performance Report Section -->
+            <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl shadow border border-indigo-200 slide-in mt-6 p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-indigo-900">Medicine Performance Report</h3>
+                        <p class="text-xs text-indigo-600">AI-powered analysis of medicine sales and feedback</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-3 items-center">
+                    <select id="medicine-select" class="border border-indigo-200 rounded-lg px-4 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none min-w-[200px]">
+                        <option value="">-- Select a Medicine --</option>
+                        ${(await db.getInventory()).map(m => `<option value="${m.name}">${m.name}</option>`).join('')}
+                    </select>
+                    <button onclick="generateMedicineReport()" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:shadow-lg transition flex items-center gap-2">
+                        <i class="fas fa-magic"></i> Generate AI Report
+                    </button>
+                </div>
+                <div id="medicine-report" class="mt-4"></div>
+            </div>
+
             <div class="bg-white rounded-xl shadow border border-slate-200 slide-in mt-4">
                 <div class="p-6 border-b border-slate-100 flex justify-between items-center">
                     <h3 class="font-bold">Activity Feed & Feedback</h3>
@@ -1359,6 +1382,118 @@ window.router = async (view, range = 'all') => {
             document.getElementById('filter-doctor').value = '';
             document.getElementById('filter-summary').textContent = '';
             router('analysis');
+        };
+
+        // Medicine Performance Report Generator
+        window.generateMedicineReport = async () => {
+            const medicineName = document.getElementById('medicine-select').value;
+            if (!medicineName) {
+                showToast('Please select a medicine first', 'error');
+                return;
+            }
+
+            const reportDiv = document.getElementById('medicine-report');
+            reportDiv.innerHTML = `
+                <div class="flex items-center gap-2 text-indigo-600 py-4">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Generating AI report for ${medicineName}...</span>
+                </div>
+            `;
+
+            try {
+                // Gather medicine-specific data
+                const logs = JSON.parse(localStorage.getItem('pc_logs')) || [];
+                const inventory = JSON.parse(localStorage.getItem('pc_inventory')) || [];
+
+                const medicineLogs = logs.filter(l => l.product === medicineName);
+                const medicineInfo = inventory.find(i => i.name === medicineName);
+
+                const totalSales = medicineLogs.reduce((sum, l) => sum + (l.sale || 0), 0);
+                const totalQty = medicineLogs.reduce((sum, l) => sum + (l.qty || 0), 0);
+                const uniqueDoctors = [...new Set(medicineLogs.map(l => l.doctor))];
+                const uniqueAgents = [...new Set(medicineLogs.map(l => l.agent))];
+                const divisions = [...new Set(medicineLogs.map(l => l.division))];
+                const feedbacks = medicineLogs.map(l => l.feedback).filter(f => f && f.trim());
+
+                const medicineContext = {
+                    name: medicineName,
+                    price: medicineInfo?.price || 0,
+                    currentStock: medicineInfo?.stock || 0,
+                    status: medicineInfo?.status || 'Unknown',
+                    totalSales: totalSales,
+                    totalQuantitySold: totalQty,
+                    transactionCount: medicineLogs.length,
+                    doctorsPrescribing: uniqueDoctors,
+                    agentsSelling: uniqueAgents,
+                    divisionsActive: divisions,
+                    customerFeedbacks: feedbacks.slice(0, 10),
+                    recentTransactions: medicineLogs.slice(0, 10).map(l => ({
+                        date: new Date(l.time).toLocaleDateString(),
+                        qty: l.qty,
+                        sale: l.sale,
+                        doctor: l.doctor,
+                        division: l.division,
+                        feedback: l.feedback
+                    }))
+                };
+
+                // Call AI API
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: `Generate a comprehensive performance report for the medicine "${medicineName}". Include: 1) Sales Performance Summary 2) Profit Analysis 3) Regional Performance 4) Doctor Engagement 5) Customer Feedback Analysis (problems, complaints, positive feedback) 6) Recommendations for improvement. Be specific with numbers and insights.`,
+                        dataContext: medicineContext,
+                        language: 'en'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                const aiReport = data.response || 'Could not generate report.';
+
+                reportDiv.innerHTML = `
+                    <div class="bg-white rounded-xl border border-indigo-200 p-5 mt-2">
+                        <div class="flex items-center gap-2 text-indigo-700 font-semibold mb-3">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Performance Report: ${medicineName}</span>
+                            <span class="ml-auto text-xs text-slate-400">${new Date().toLocaleDateString()}</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3 mb-4">
+                            <div class="bg-blue-50 rounded-lg p-3 text-center">
+                                <div class="text-2xl font-bold text-blue-600">৳${totalSales.toLocaleString()}</div>
+                                <div class="text-xs text-blue-500">Total Sales</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3 text-center">
+                                <div class="text-2xl font-bold text-green-600">${totalQty}</div>
+                                <div class="text-xs text-green-500">Units Sold</div>
+                            </div>
+                            <div class="bg-purple-50 rounded-lg p-3 text-center">
+                                <div class="text-2xl font-bold text-purple-600">${uniqueDoctors.length}</div>
+                                <div class="text-xs text-purple-500">Prescribing Doctors</div>
+                            </div>
+                            <div class="bg-orange-50 rounded-lg p-3 text-center">
+                                <div class="text-2xl font-bold text-orange-600">${divisions.length}</div>
+                                <div class="text-xs text-orange-500">Active Regions</div>
+                            </div>
+                        </div>
+                        <div class="prose prose-sm max-w-none text-slate-700 leading-relaxed">
+                            ${aiReport.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                reportDiv.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                        <i class="fas fa-exclamation-triangle"></i> Error generating report: ${error.message}
+                    </div>
+                `;
+            }
         };
     }
 };
